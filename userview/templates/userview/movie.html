@@ -1,0 +1,12 @@
+{% if movie %}
+<h1>{{movie.title}}</h1>
+
+
+    <form method="POST" action="{% url 'rate_movie' movie.id %}">
+    {% csrf_token %}
+    <label for="rating">Rate this movie:</label>
+    <input type="number" name="rating" min="1" max="5" required>
+    <button type="submit">Submit</button>
+</form>
+
+{% endif %}
