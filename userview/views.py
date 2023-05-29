@@ -97,7 +97,7 @@ def login_request(request):
                 return redirect("index")
         else:
             form.add_error(None, 'Invalid username or password.')
-            return redirect("index")
+            return redirect("login")
     else:
         user = request.user
         if user.is_authenticated:
