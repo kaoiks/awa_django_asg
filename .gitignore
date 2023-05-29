@@ -3,3 +3,4 @@ Pipfile.lock
 venv
 *.sqlite3
 *.pyc
+.idea/
