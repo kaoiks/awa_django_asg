@@ -5,8 +5,47 @@ from django.shortcuts import render
 from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
 
-from .forms import NewUserForm, LoginForm, MovieForm, CommentForm
+from .forms import NewUserForm, LoginForm, MovieForm, CommentForm, MovieSearchForm
 from .models import Movie, Genre, Rating, Comment
+from django.db.models import Avg
+
+
+def movie_search_view(request):
+    form = MovieSearchForm(request.GET)
+
+    if form.is_valid():
+        title = form.cleaned_data.get('title')
+        genre = form.cleaned_data.get('genre')
+        min_rating = form.cleaned_data.get('min_rating')
+
+        # Perform the movie search based on the form data
+        # You can use the provided filters to query the Movie model
+
+        # Example query:
+        movies = Movie.objects.all()
+        if title:
+            movies = movies.filter(title__icontains=title)
+        if genre:
+            movies = movies.filter(genres=genre)
+        if min_rating:
+            movies = movies.filter(rating__value__gte=min_rating)
+    else:
+        movies = Movie.objects.all()
+
+    context = {
+        'form': form,
+        'movies': movies,
+    }
+
+    return render(request, 'userview/movie_search.html', context)
+
+
+class HomeView(generic.ListView):
+    template_name = 'userview/home.html'
+    context_object_name = 'movies'
+
+    def get_queryset(self):
+        return Movie.objects.annotate(avg_rating=Avg('rating__value')).order_by('-avg_rating')[:5]
 
 
 class IndexView(generic.ListView):
@@ -29,7 +68,13 @@ class IndexView(generic.ListView):
 
 class MovieView(generic.DetailView):
     model = Movie
+
     template_name = 'userview/movie.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        comments = Comment.objects.filter(movie=self.get_object())
+        context['comments'] = comments
 
 
 class GenreView(generic.DetailView):
@@ -68,7 +113,7 @@ def login_request(request):
             if user is not None:
                 # Log the user in
                 login(request, user)
-                return redirect("index")  # Replace 'home' with the name of your home page URL pattern
+                return redirect("home")  # Replace 'home' with the name of your home page URL pattern
             else:
                 form.add_error(None, 'Invalid username or password.')
                 return redirect("index")
@@ -78,7 +123,7 @@ def login_request(request):
     else:
         user = request.user
         if user.is_authenticated:
-            return redirect("index")
+            return redirect("home")
         form = LoginForm()
         return render(request=request, template_name="userview/login.html",
                       context={"login_form": form})
@@ -101,13 +146,23 @@ def rate_movie(request, pk):
             rating_value = int(request.POST.get('rating'))
             rating = Rating(movie=movie, user=request.user, value=rating_value)
             rating.save()
+            return redirect('movie', pk=pk)
 
         elif "comment" in request.POST:
             comment_form = CommentForm(request.POST, initial={'user': request.user.username})
             if comment_form.is_valid():
+
                 comment = comment_form.save(commit=False)
-                comment.movie = movie
+
+                # class Comment(models.Model):
+                #     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
+                #     user = models.ManyToManyField(settings.AUTH_USER_MODEL)
+                #     text = models.CharField(max_length=1000)
+                #     date = models.DateTimeField()
+                comment = Comment(movie=movie, text=request.POST.get('text'))
                 comment.save()
+                comment.user.add(request.user)
+
                 return redirect('movie', pk=pk)
 
     return render(request, 'userview/movie.html',

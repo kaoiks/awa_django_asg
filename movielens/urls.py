@@ -21,6 +21,6 @@ from userview import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("movies/", include("userview.urls")),
+    path("", include("userview.urls")),
 
 ]

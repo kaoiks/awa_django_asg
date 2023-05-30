@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django import forms
 
-from userview.models import Movie, Comment, Rating
+from userview.models import Movie, Comment, Rating, Genre
 
 
 class NewUserForm(UserCreationForm):
@@ -52,5 +52,11 @@ class CommentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.initial['date'] = datetime.datetime.now()
         self.initial['user'] = get_user_model().objects.filter(username=kwargs['initial']['user']).first()
+
+
+class MovieSearchForm(forms.Form):
+    title = forms.CharField(required=False, label='Movie Title')
+    genre = forms.ModelChoiceField(queryset=Genre.objects.all(), required=False, label='Genre')
+    min_rating = forms.IntegerField(min_value=1, max_value=5, required=False, label='Minimum Rating')
+

@@ -1,0 +1,18 @@
+{% extends "userview/header.html" %}
+{% block content %}
+<form method="get" action="{% url 'movie_search' %}">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Search</button>
+</form>
+
+{% if movies %}
+    <ul>
+        {% for movie in movies %}
+            <li><a href="movie/{{movie.id}}">{{ movie.title }}</a></li>
+            {% endfor %}
+    </ul>
+{% else %}
+    <p>No movies found.</p>
+{% endif %}
+{% endblock %}

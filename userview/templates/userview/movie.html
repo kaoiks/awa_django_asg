@@ -1,7 +1,7 @@
 {% extends "userview/header.html" %} {% block content %}
     {% if movie %}
         <h1>{{ movie.title }}</h1>
-
+{#        <img src="{{ post.image.url }}" alt="img">#}
         {% if user.is_superuser %}
             <a class="nav-link active" aria-current="page" href="{% url 'edit_movie' movie.id %}">Edit</a>
         {% endif %}
@@ -25,7 +25,7 @@
         {% if comments %}
             <ul>
                 {% for comment in comments %}
-                    <li>{{ comment.user.name }}&ensp{{ comment.date }} : &ensp{{ comment.text }}</li>
+                    <li>{{ comment.user.first.username }} {{ comment.date }}: {{ comment.text }}</li>
                 {% endfor %}
             </ul>
         {% endif %}

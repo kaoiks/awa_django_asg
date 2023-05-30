@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-
+import datetime
 
 class Genre(models.Model):
     name = models.CharField(max_length=300)
@@ -30,4 +30,4 @@ class Comment(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
     user = models.ManyToManyField(settings.AUTH_USER_MODEL)
     text = models.CharField(max_length=1000)
-    date = models.DateTimeField()
+    date = models.DateTimeField(auto_now_add=True)
