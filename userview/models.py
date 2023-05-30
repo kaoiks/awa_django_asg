@@ -27,6 +27,7 @@ class Rating(models.Model):
 
 
 class Comment(models.Model):
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
     user = models.ManyToManyField(settings.AUTH_USER_MODEL)
     text = models.CharField(max_length=1000)
     date = models.DateTimeField()

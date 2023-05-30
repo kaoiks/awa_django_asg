@@ -1,0 +1,10 @@
+{% extends "userview/header.html" %} {% block content %}
+
+    <h1>Edit Movie</h1>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Save</button>
+    </form>
+
+{% endblock %}

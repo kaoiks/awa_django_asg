@@ -1,20 +1,33 @@
 {% extends "userview/header.html" %} {% block content %}
-{% if movie %}
-<h1>{{movie.title}}</h1>
+    {% if movie %}
+        <h1>{{ movie.title }}</h1>
 
-
-    <form method="POST" action="{% url 'rate_movie' movie.id %}">
-    {% csrf_token %}
-    <label for="rating">Rate this movie:</label>
-    <input type="number" name="rating" min="1" max="5" required>
-    <button type="submit">Submit</button>
-</form>
-
-    {% if user.is_authenticated %}
         {% if user.is_superuser %}
+            <a class="nav-link active" aria-current="page" href="{% url 'edit_movie' movie.id %}">Edit</a>
+        {% endif %}
 
-        <button type="submit">Submit</button>
+        {% if user.is_authenticated %}
+            <form method="POST" action="{% url 'rate_movie' movie.id %}">
+                {% csrf_token %}
+                <label for="rating">Rate this movie:</label>
+                <input type="number" name="rating" min="1" max="5" required>
+                <button type="submit" name="rate">Submit</button>
+            </form>
+
+            <h1>Comment</h1>
+            <form method="POST">
+                {% csrf_token %}
+                {{ comment_form.as_p }}
+                <button type="submit" name="comment">Save</button>
+            </form>
+        {% endif %}
+
+        {% if comments %}
+            <ul>
+                {% for comment in comments %}
+                    <li>{{ comment.user.name }}&ensp{{ comment.date }} : &ensp{{ comment.text }}</li>
+                {% endfor %}
+            </ul>
         {% endif %}
     {% endif %}
-{% endif %}
 {% endblock %}

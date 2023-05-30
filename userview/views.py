@@ -1,36 +1,13 @@
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
-from django.shortcuts import render, get_object_or_404, redirect
-
-from django.http import HttpRequest, HttpResponse
-
-
+from django.shortcuts import get_object_or_404, redirect
 from django.shortcuts import render
-from django.http import HttpRequest, HttpResponse
-from django.template import loader
+from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
 
-from .forms import NewUserForm, LoginForm
-from .models import Movie, Genre, Rating
+from .forms import NewUserForm, LoginForm, MovieForm, CommentForm
+from .models import Movie, Genre, Rating, Comment
 
-# def index(request : HttpRequest):
-#     movies = Movie.objects.order_by('-title')
-#     template = loader.get_template('userview/index.html')
-#     context = {
-#     'movies' : movies
-#     }
-#     return HttpResponse(template.render(context,request))
-
-# def view_movie(request: HttpRequest, movie_id):
-#     response = 'you are looking at the movie with an id %s'
-#     return HttpResponse(response % movie_id)
-
-# def view_genre(request: HttpRequest, genre_id):
-#     response = 'you are looking at the genre with an id %s'
-#     return HttpResponse(response % genre_id)
-
-
-from django.views import generic
 
 class IndexView(generic.ListView):
     template_name = 'userview/index.html'
@@ -54,6 +31,7 @@ class MovieView(generic.DetailView):
     model = Movie
     template_name = 'userview/movie.html'
 
+
 class GenreView(generic.DetailView):
     model = Genre
     template_name = 'userview/genre.html'
@@ -61,7 +39,6 @@ class GenreView(generic.DetailView):
 
 @csrf_exempt
 def register_request(request):
-
     if request.method == "POST":
         form = NewUserForm(request.POST)
         if form.is_valid():
@@ -70,12 +47,12 @@ def register_request(request):
             messages.success(request, "Registration successful.")
             return redirect("index")
         messages.error(request, "Unsuccessful registration. Invalid information.")
-        return render (request=request, template_name="userview/register.html",
-            context={"register_form": form})
+        return render(request=request, template_name="userview/register.html",
+                      context={"register_form": form})
     else:
         form = NewUserForm()
-        return render (request=request, template_name="userview/register.html",
-            context={"register_form": form})
+        return render(request=request, template_name="userview/register.html",
+                      context={"register_form": form})
 
 
 @csrf_exempt
@@ -103,8 +80,8 @@ def login_request(request):
         if user.is_authenticated:
             return redirect("index")
         form = LoginForm()
-        return render (request=request, template_name="userview/login.html",
-            context={"login_form": form})
+        return render(request=request, template_name="userview/login.html",
+                      context={"login_form": form})
 
 
 @csrf_exempt
@@ -116,7 +93,40 @@ def logout_request(request):
 @csrf_exempt
 def rate_movie(request, pk):
     movie = get_object_or_404(Movie, pk=pk)
-    rating_value = int(request.POST.get('rating'))
-    rating = Rating(movie=movie, user=request.user, value=rating_value)
-    rating.save()
-    return redirect('movie', pk=pk)
+
+    comments = Comment.objects.filter(movie=movie)
+    comment_form = CommentForm(initial={'user': request.user.username})
+    if request.method == 'POST':
+        if "rate" in request.POST:
+            rating_value = int(request.POST.get('rating'))
+            rating = Rating(movie=movie, user=request.user, value=rating_value)
+            rating.save()
+
+        elif "comment" in request.POST:
+            comment_form = CommentForm(request.POST, initial={'user': request.user.username})
+            if comment_form.is_valid():
+                comment = comment_form.save(commit=False)
+                comment.movie = movie
+                comment.save()
+                return redirect('movie', pk=pk)
+
+    return render(request, 'userview/movie.html',
+                  {'movie': movie, 'comment_form': comment_form, "pk": pk, "comments": comments})
+
+
+@csrf_exempt
+def edit_movie(request, movie_id):
+    if not request.user.is_superuser:
+        return redirect("index")
+
+    movie = get_object_or_404(Movie, pk=movie_id)
+
+    if request.method == 'POST':
+        form = MovieForm(request.POST, instance=movie)
+        if form.is_valid():
+            edited_movie = form.save()
+            return redirect('movie', movie_id=edited_movie.id)
+    else:
+        form = MovieForm(instance=movie)
+
+    return render(request, 'userview/edit_movie.html', context={'form': form})
